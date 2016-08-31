@@ -7,20 +7,21 @@ import Database.Redis
 import Control.Monad.IO.Class
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.ByteString.Internal
+import Data.ByteString.Lazy.Internal
+import Data.ByteString.Lazy (fromStrict)
 
 index = responseLBS
     status200
     [("Content-Type", "text/plain")]
     "hello world"
 
-getStatus :: String -> Response
+getStatus :: Data.ByteString.Internal.ByteString -> Response
 getStatus s = responseLBS
     status200
     [("Content-Type", "text/plain")]
-    (pack s)
+    (fromStrict s)
 
---connectRedis :: IO [Maybe Data.ByteString.Internal.ByteString]
-connectRedis :: IO (Either Reply (Maybe ByteString))
+connectRedis :: IO (Either Reply (Maybe Data.ByteString.Internal.ByteString))
 connectRedis = do
     conn <- connect defaultConnectInfo
     runRedis conn $ do
@@ -32,22 +33,25 @@ notFound = responseLBS
     status404
     [("Content-Type", "text/plain")]
     "not found"
+
+-- Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
 app :: Application
-app request respond =
+app request respond = do
+    a <- getRedis
     respond $ case rawPathInfo request of
-    "/" -> index
---    "/get/" -> getStatus =<< connectRedis
-    "/get/" -> hoge
-    _ -> notFound
+        "/" -> index
+        "/get/" -> getStatus a
+        _ -> notFound
 
 
-hoge :: Response
-hoge = do
+
+getRedis :: IO Data.ByteString.Internal.ByteString
+getRedis = do
     a <- connectRedis
-    responseLBS status200 [] $
-        case a of
-            Right Just s -> s
-            _ -> "error"
+    case a of
+        Right (Just s) -> return s
+        _ -> return "error"
+
 
 main :: IO ()
 main = do
