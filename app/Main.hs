@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+module Main where
 
 import Network.Wai (responseLBS, Application, rawPathInfo, Response)
 import Network.Wai.Handler.Warp (run)
 import Network.HTTP.Types (status200, status404)
 import Database.Redis
-import Control.Monad.IO.Class
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.ByteString.Internal
 import Data.ByteString.Lazy.Internal
